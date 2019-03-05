@@ -1,0 +1,48 @@
+/*
+ *  file:       lrtc/message/sv.proto
+ *  date:       12.09.2015
+ *  company:    Linkos
+ *  descript.:  Scalar value (publication) RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+
+package Linkos.RTC.Message.SV;
+
+message CREP
+{
+    optional string name = 1;           // value name
+
+    // valid packet contains only one "*_value"
+
+    optional dummy bool_value = 16;
+
+    optional dummy double_value = 17;
+    optional dummy float_value = 18;
+
+    optional dummy u32_value = 19;
+    optional dummy s32_value = 20;
+
+    optional dummy u64_value = 21;
+    optional dummy s64_value = 22;
+}
+
+message SREP
+{
+    // valid packet contains only one "*_value" (the same name as "CREP::*_value")
+
+    optional bool bool_value = 16;
+
+    optional double double_value = 17;
+    optional float float_value = 18;
+
+    optional uint32 u32_value = 19;
+    optional sint32 s32_value = 20;
+
+    optional uint64 u64_value = 21;
+    optional sint64 s64_value = 22;
+}
+
+message MREQ {}

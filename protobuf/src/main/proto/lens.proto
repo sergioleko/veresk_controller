@@ -1,0 +1,101 @@
+/*
+ *  file:       lrtc/message/lens.proto
+ *  date:       25.04.2014
+ *  company:    Linkos
+ *  descript.:  Lens RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+import "range.proto";
+
+package Linkos.RTC.Message.Lens;
+
+message CREP
+{
+    optional Unit zoom = 16;
+    optional Unit focus = 17;
+    optional Unit iris = 18;
+    optional Unit filter = 19;
+
+    optional dummy iris_ac = 20;        // never present if not has_iris
+    optional dummy ex_mag = 21;
+
+    optional uint32 nfov = 22;          // number of supported FOVs (at least one)
+    optional uint32 nts = 23;           // number of temperature sensors (at least one)
+
+    optional double focal_length = 24;  // fixed focal length (mm)
+
+    // focal length tables (FLT), sorted from lower values
+
+    repeated FLTI flt1 = 25;
+    repeated FLTI flt2 = 26;            // extender magnification FLT
+
+    optional dummy focus_ac = 27;       // never present if not hase_focus
+
+    message Unit
+    {
+        enum ControlMode
+        {   CM_POSITION = 1;
+            CM_SPEED = 2;
+            CM_STEP = 3;
+            CM_SPEED_STEP = 4;
+            CM_FIXED_SPEED = 5;
+        }
+
+        optional dummy position = 16;   // position is available
+        optional dummy position_name = 17; // position name is available
+        optional ControlMode control = 18; // control mode is available
+        optional range_u range = 19;    // position or speed range
+        optional dummy ls = 20;         // limit sensors are available
+    }
+
+    message FLTI                        // focal length table item
+    {   required uint32 zoom = 1;
+        required double focal_length = 2;
+    }
+}
+
+message SREP
+{
+    optional Unit zoom = 16;
+    optional Unit focus = 17;
+    optional Unit iris = 18;
+    optional Unit filter = 19;
+
+    optional bool focus_ac = 20;
+    optional bool iris_ac = 32;
+    optional bool ex_mag = 33;
+
+    repeated int32 ts = 34;             // temperature sensors values array
+
+    message Unit
+    {
+        optional uint32 position = 16;  // position
+        optional string position_name = 17; // position name
+        optional bool fls = 18;         // forward limit sensor state
+        optional bool rls = 19;         // reverse limit sensor state
+    }
+}
+
+message MREQ
+{
+    optional Unit zoom = 16;
+    optional Unit focus = 17;
+    optional Unit iris = 18;
+    optional Unit filter = 19;
+
+    optional bool focus_ac = 20;
+    optional bool iris_ac = 28;
+    optional bool ex_mag = 29;
+
+    optional uint32 fov = 30;           // FOV index
+
+    message Unit
+    {
+        optional uint32 position = 16;  // position request (if CP_POSITION control mode)
+        optional int32 speed = 17;      // speed (if other control modes)
+        optional dummy accl = 18;       // "accelerated" movement
+    }
+}

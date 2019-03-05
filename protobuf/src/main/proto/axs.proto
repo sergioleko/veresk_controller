@@ -1,0 +1,55 @@
+/*
+ *  file:       lrtc/message/axs.proto
+ *  date:       28.04.2014
+ *  company:    Linkos
+ *  descript.:  AXS RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+import "range.proto";
+
+package Linkos.RTC.Message.AXS;
+
+message CREP
+{
+    required bool xposition_loop = 1;
+    required range_d xspeed = 2;
+
+    required bool yposition_loop = 3;
+    required range_d yspeed = 4;
+
+    // "position_reference" presence means "position reference can be set by "mreq""
+
+    optional dummy position_reference = 5;
+
+    // if "discrete" present server can accept per-axis management requests
+    // (otherwise "mreq" must contains both axes management at once).
+    // note that "position_reference" is always discrete
+
+    optional dummy discrete = 6;
+
+    // non-loop position ranges
+
+    optional range_d xposition = 16;
+    optional range_d yposition = 17;
+}
+
+message SREP
+{
+    required double xposition = 1;
+    required double xposition_reference = 2;
+    required double yposition = 3;
+    required double yposition_reference = 4;
+}
+
+message MREQ
+{
+    optional double xposition = 16;
+    optional double xspeed = 17;
+    optional double yposition = 18;
+    optional double yspeed = 19;
+    optional double xposition_reference = 20;
+    optional double yposition_reference = 21;
+}

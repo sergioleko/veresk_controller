@@ -1,0 +1,22 @@
+/*
+ *  file:       lrtc/message/command.proto
+ *  date:       08.12.2016
+ *  company:    Linkos
+ *  descript.:  Command RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+
+package Linkos.RTC.Message.Command;
+
+message CREP
+{   optional string name = 1;
+}
+
+message SREP {}
+
+message MREQ
+{   optional dummy exec = 1;
+}

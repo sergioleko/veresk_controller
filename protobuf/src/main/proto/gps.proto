@@ -1,0 +1,36 @@
+/*
+ *  file:       lrtc/message/gps.proto
+ *  date:       19.06.2014
+ *  company:    Linkos
+ *  descript.:  GPS RTC message definition
+ */
+
+syntax = "proto2";
+
+package Linkos.RTC.Message.GPS;
+
+message CREP
+{
+    optional uint32 nts = 16;           // number of temperature sensors (at least one)
+}
+
+message SREP
+{
+    repeated int32 ts = 16;             // temperature sensors values array
+
+    optional DateTime datetime = 17;
+    optional Position position = 18;
+
+    message DateTime
+    {   required string date = 1;       // date (ISO 8601)
+        required string time = 2;       // time (ISO 8601)
+    }
+
+    message Position
+    {   required double lat = 1;        // latitude (degrees)
+        required double lon = 2;        // longitude (degrees)
+        required double alt = 3;        // altitude (meters)
+    }
+}
+
+message MREQ {}

@@ -1,0 +1,28 @@
+/*
+ *  file:       lrtc/message.dummy.proto
+ *  date:       05.05.2014
+ *  company:    Linkos
+ *  descript.:  Range RTC message definition
+ */
+
+syntax = "proto2";
+
+package Linkos.RTC.Message;
+
+message range_d
+{
+    required double min = 1;
+    required double max = 2;
+}
+
+message range_u
+{
+    required uint32 min = 1;
+    required uint32 max = 2;
+}
+
+message range_i
+{
+    required int32 min = 1;
+    required int32 max = 2;
+}

@@ -1,0 +1,22 @@
+/*
+ *  file:       lrtc/message/bs.proto
+ *  date:       24.08.2015
+ *  company:    Linkos
+ *  descript.:  Binary switch (BS) RTC message definition
+ */
+
+syntax = "proto2";
+
+package Linkos.RTC.Message.BS;
+
+message CREP
+{   optional string name = 1;
+}
+
+message SREP
+{    required bool value = 1; // obsoleted name - "state"
+}
+
+message MREQ
+{    optional bool value = 1; // obsoleted name - "state"
+}

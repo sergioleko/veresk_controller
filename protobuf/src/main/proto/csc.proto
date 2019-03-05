@@ -1,0 +1,37 @@
+/*
+ *  file:       lrtc/message/csc.proto
+ *  date:       28.04.2014
+ *  company:    Linkos
+ *  descript.:  CSC (control station config) RTC message definition. Note that
+ *              all "ports" are really of uint16 type, zero (unused) ports
+ *              values aren't setted
+ */
+
+syntax = "proto2";
+
+package Linkos.RTC.Message.CSC;
+
+message CREP
+{
+    required fixed32 id = 1;            // (theodolite) control station ID
+
+    repeated Eye eye = 16;              // eyes definition array
+
+    optional Port lrf = 17;
+    optional Port axs = 18;
+    optional Port gps = 19;
+    optional Port compass = 20;
+
+    message Port
+    {   optional uint32 udp = 1;
+        optional uint32 tcp = 2;
+        optional string ipc = 3;
+    };
+
+    message Eye
+    {   required string name = 1;
+        optional Port aef = 16;
+        optional Port lens = 17;
+        repeated Port camera = 18;      // camera servers (at least one)
+    }
+}

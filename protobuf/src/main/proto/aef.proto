@@ -1,0 +1,46 @@
+/*
+ *  file:       lrtc/message/aef.proto
+ *  date:       26.04.2014
+ *  company:    Linkos
+ *  descript.:  AEF RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+
+package Linkos.RTC.Message.AEF;
+
+message CREP
+{
+    optional dummy lid = 16;
+    optional dummy ssu = 17;
+    optional dummy shutter = 18;
+    optional uint32 ncswp = 19;         // camera switcher positions (at least two)
+    optional dummy cswp_name = 20;      // camera switcher positions names are available
+    optional uint32 nts = 21;           // number of temperature sensors (at least one)
+}
+
+message SREP
+{
+    enum Lid { LID_OPENED = 1; LID_CLOSED = 2; LID_INTERMEDIATE = 3; LID_ERROR = 4; }
+    enum Shutter { SHUTTER_OPENED = 1; SHUTTER_CLOSED = 2; }
+    enum CSW { CSW_FIXED = 1; CSW_INTERMEDIATE = 2; CSW_ERROR = 3; }
+
+    optional Lid lid = 16;              // lid stage
+    optional bool ssu = 17;             // ssu trigger state ("true" means "triggered")
+    optional Shutter shutter = 18;      // shutter state
+    optional CSW csw = 19;              // camera switcher state
+    optional uint32 cswp = 20;          // camera switcher position index (if csw is FIXED)
+    optional string cswp_name = 21;     // camera switcher position name (if csw is FIXED)
+
+    repeated int32 ts = 22;             // temperature sensors values array
+}
+
+message MREQ
+{
+    enum Lid { LID_OPEN = 1; LID_CLOSE = 2; }
+
+    optional Lid lid = 16;              // lid command
+    optional uint32 cswp = 17;          // camera switcher position index
+}

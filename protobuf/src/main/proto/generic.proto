@@ -1,0 +1,142 @@
+/*
+ *  file:       lrtc/message/generic.proto
+ *  date:       25.04.2014
+ *  company:    Linkos
+ *  descript.:  Ganeric RTC message definition
+ */
+
+syntax = "proto2";
+
+import "aef.proto";
+import "axs.proto";
+import "axsv3.proto";
+import "bbsync.proto";
+import "bs.proto";
+import "camera.proto";
+import "command.proto";
+import "compass.proto";
+import "csc.proto";
+import "gps.proto";
+import "lens.proto";
+import "lrf.proto";
+import "rs.proto";
+import "sv.proto";
+import "ss.proto";
+//import "tracker.proto";
+
+package Linkos.RTC.Message;
+
+message Generic
+{
+    // message ID (FCC value): for fast input messages filtering or forwarding
+
+    required fixed32 mid = 1;
+
+    // message body (mutually exclusive)
+
+    optional CREQ creq = 16;
+    optional CREP crep = 17;
+
+    optional SREQ sreq = 18;
+    optional SREP srep = 19;
+
+    optional MREQ mreq = 20;
+    optional SREP mrep = 21;
+}
+
+// the best place for CREQ/CREP/etc. messages definition is the Generic message,
+// but in this way it's impossible to use their forward declarations
+
+// config request, config report
+
+message CREQ {}
+
+message CREP
+{
+    // config report body (mutually exclusive)
+
+    optional CSC.CREP csc = 16;
+    optional AXS.CREP axs = 17;
+    optional LRF.CREP lrf = 18;
+    optional AEF.CREP aef = 19;
+    optional Camera.CREP camera = 20;
+    optional Lens.CREP lens = 21;
+    optional GPS.CREP gps = 22;
+    optional Compass.CREP compass = 23;
+    optional AXSV3.CREP axsv3 = 24;
+    optional BS.CREP bs = 25;
+    optional SV.CREP sv = 26;
+    optional Command.CREP command = 27;
+    // 28 is unusable (deleted "AXS2")
+    optional BBSync.CREP bbsync = 29;
+    // 30 is unusable (deleted "REGIS")
+    // 31 is reserved (for "Tracker")
+    optional RS.CREP rs = 32;
+    optional SS.CREP ss = 33;
+}
+
+// status request, status/management report
+
+message SREQ {}
+
+message SREP
+{
+    required bool ready = 1;
+    required bool busy = 2;
+
+    // status/management report body (mutually exclusive)
+
+    optional AXS.SREP axs = 17;
+    optional LRF.SREP lrf = 18;
+    optional AEF.SREP aef = 19;
+    optional Camera.SREP camera = 20;
+    optional Lens.SREP lens = 21;
+    optional GPS.SREP gps = 22;
+    optional Compass.SREP compass = 23;
+    optional AXSV3.SREP axsv3 = 24;
+    optional BS.SREP bs = 25;
+    optional SV.SREP sv = 26;
+    optional Command.SREP command = 27;
+    // 28 is unusable (deleted "AXS2")
+    optional BBSync.SREP bbsync = 29;
+    // 30 is unusable (deleted "REGIS")
+    // 31 is reserved (for "Tracker")
+    optional RS.SREP rs = 32;
+    optional SS.SREP ss = 33;
+}
+
+// client message: management request
+
+message MREQ
+{
+    // MD5 sum of config report (CREP) message divided into four parts
+
+    required fixed32 md5a = 1;
+    required fixed32 md5b = 2;
+    required fixed32 md5c = 3;
+    required fixed32 md5d = 4;
+
+    // management request priority (lower number - higher priority)
+
+    required uint32 priority = 5;
+
+    // management request body (mutually exclusive: nothing or single)
+
+    optional AXS.MREQ axs = 17;
+    optional LRF.MREQ lrf = 18;
+    optional AEF.MREQ aef = 19;
+    optional Camera.MREQ camera = 20;
+    optional Lens.MREQ lens = 21;
+    optional GPS.MREQ gps = 22;
+    optional Compass.MREQ compass = 23;
+    optional AXSV3.MREQ axsv3 = 24;
+    optional BS.MREQ bs = 25;
+    optional SV.MREQ sv = 26;
+    optional Command.MREQ command = 27;
+    // 28 is unusable (deleted "AXS2")
+    optional BBSync.MREQ bbsync = 29;
+    // 30 is unusable (deleted "REGIS")
+    // 31 is reserved (for "Tracker")
+    optional RS.MREQ rs = 32;
+    optional SS.MREQ ss = 33;
+}

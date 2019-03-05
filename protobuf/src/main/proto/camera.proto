@@ -1,0 +1,96 @@
+/*
+ *  file:       lrtc/message/camera.proto
+ *  date:       25.04.2014
+ *  company:    Linkos
+ *  descript.:  Camera RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+import "range.proto";
+
+package Linkos.RTC.Message.Camera;
+
+message CREP
+{
+    optional Feature exposure = 16;
+    optional Feature gain = 17;
+    optional Feature brightness = 18;
+    optional Feature contrast = 19;
+
+    optional dummy invert_image = 20;
+    optional dummy test_image = 21;
+    optional dummy gamma_correction = 22;
+
+    repeated uint32 vfps = 23;          // variable FPS (array, at least two values)
+    optional uint32 nts = 24;           // number of temperature sensors (at least one)
+
+    optional dummy correction = 25;
+    optional dummy video_stabilization = 26;
+    optional dummy histogram_equalization = 27;
+    optional dummy electronic_zoom = 28;
+    optional dummy enhanced_contrast = 29;
+
+    message Feature
+    {
+        optional range_u range = 16;    // fixed range
+        optional dummy ac = 17;         // "auto control" is available
+    }
+}
+
+message SREP
+{
+    required uint32 fps = 1;            // current FPS value
+    optional uint32 exposure_time = 2;  // exposure time (microseconds)
+
+    optional Feature exposure = 16;
+    optional Feature gain = 17;
+    optional Feature brightness = 18;
+    optional Feature contrast = 19;
+
+    optional bool invert_image = 20;
+    optional bool test_image = 21;
+    optional bool gamma_correction = 22;
+
+    repeated int32 ts = 23;             // temperature sensors values array
+
+    optional bool video_stabilization = 24;
+    optional bool histogram_equalization = 25;
+    optional bool electronic_zoom = 26;
+    optional bool enhanced_contrast = 27;
+
+    message Feature
+    {
+        required uint32 value = 1;      // value
+        optional range_u range = 16;    // variable range
+        optional bool ac = 17;          // "auto control" state
+    }
+}
+
+message MREQ
+{
+    optional Feature exposure = 16;
+    optional Feature gain = 17;
+    optional Feature brightness = 18;
+    optional Feature contrast = 19;
+
+    optional bool invert_image = 20;
+    optional bool test_image = 21;
+    optional bool gamma_correction = 22;
+
+    optional uint32 fps = 23;           // FPS value
+
+    optional dummy correction = 24;
+
+    optional bool video_stabilization = 25;
+    optional bool histogram_equalization = 26;
+    optional bool electronic_zoom = 27;
+    optional bool enhanced_contrast = 28;
+
+    message Feature
+    {
+        optional uint32 value = 16;     // value
+        optional bool ac = 19;          // "auto control" state
+    }
+}

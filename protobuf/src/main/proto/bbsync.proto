@@ -1,0 +1,92 @@
+/*
+ *  file:       lrtc/message/bbsync.proto
+ *  date:       11.05.2017
+ *  company:    Linkos
+ *  descript.:  BB/Sync RTC message definition
+ */
+
+syntax = "proto2";
+
+import "dummy.proto";
+
+package Linkos.RTC.Message.BBSync;
+
+message CREP {}
+
+message SREP
+{
+    required AuxType.Sync.Mode mode = 1;
+    required uint32 errors = 2;
+
+    optional AuxType.Time.Report time = 3;
+    optional AuxType.Date base_date = 4;
+}
+
+message MREQ
+{
+    optional AuxType.Sync.Mode mode = 1;
+    optional AuxType.Time.Request time = 2;
+
+    /* "base_date" isn't transmitted to hardware: it's only a value that
+     * "master" client shares for all other clients */
+
+    optional AuxType.Date base_date = 3;
+}
+
+/* Auxiliary types */
+
+message AuxType
+{
+    message Sync
+    {
+        /* Available sync types */
+
+        enum Type { TYPE_INT = 1; TYPE_EXT = 2; TYPE_PPS = 3; }
+
+        /* Sync binding edges */
+
+        enum Edge { EDGE_RIS = 1; EDGE_FAL = 2; }
+
+        /* Sync mode consist of sync type and two binding edges */
+
+        message Mode
+        {   required Type type = 1;
+            required Edge input_edge = 2;
+            required Edge output_edge = 3;
+        }
+    }
+
+    /* Date holder */
+
+    message Date
+    {   required uint32 year = 1;
+        required uint32 month = 2;
+        required uint32 day = 3;
+    }
+
+    message Time
+    {
+        /* Time report:
+         * - Next_day/overday is signalled by adding 60x60x24 seconds to "sec";
+         * - "sec" is a time value (day second counter);
+         * - "usec" is a fractional time value part (in microseconds) */
+
+        message Report
+        {   required uint32 sec = 1;
+            required uint32 usec = 2;
+        }
+
+        /* Time set request:
+         * - "sec" field presence switches between "set time" (present, time
+         *   value, day second counter) and "reset time" (absent) requests;
+         * - "usec" is a fractional time value part (in microseconds);
+         * - "min_act" field presence switches between ordinary "set time" and
+         *   "set time by minute activation */
+
+        message Request
+        {   optional uint32 sec = 1;
+            optional uint32 usec = 2;
+            optional dummy min_act = 3;
+        }
+    }
+}

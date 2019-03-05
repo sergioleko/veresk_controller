@@ -1,0 +1,109 @@
+/*
+ *  file:       lrtc/message/axsv3.proto
+ *  date:       10.2014
+ *  company:    Linkos
+ *  descript.:  AXSV3 RTC message definition
+ */
+
+syntax = "proto2";
+
+import "range.proto";
+
+package Linkos.RTC.Message.AXSV3;
+/*
+// Режимы работы DCU
+enum WorkMode {
+    WT_STOP = 0; // Простаивает
+    WT_SCAN = 1; // Опрос состояния ВБУП
+    WT_WORK = 2; // Работа
+    WT_TEST = 3; // Выполнение тестовых заданий, скачивание тестовых данных
+    WT_TRANS = 4; // Передача файлов
+}
+*/
+/*
+// Режимы наведения
+enum TargetMode {
+    TM_NO = 0; TM_ZR = 1; TM_PA = 2; TM_AS = 3; TM_FA1 = 4; TM_FA2 = 5; TM_VO = 6; TM_RD = 7; TM_RS = 8; TM_RLS = 9; TM_EF = 10; TM_UM = 11;
+}
+*/
+message CREP
+{
+    required bool x_position_loop = 1;
+    required double x_speed = 2;
+    required uint32 x_loop_quants = 3;
+    required double x_bup_xp = 4;
+
+    required bool y_position_loop = 5;
+    required double y_speed = 6;
+    required uint32 y_loop_quants = 7;
+    required double y_bup_xp = 8;
+
+    optional range_d x_position = 16;   // non-loop x-position range
+    optional range_d y_position = 17;   // non-loop y-position range
+    optional double x_start_xp = 18;
+}
+
+message AXIS
+{
+    optional bool power = 16;
+    optional bool ready = 17;
+    optional bool zeros = 18;
+    optional bool in_affix = 19;
+    optional double angleP = 20;
+    optional double angleV = 21;
+    optional double angleA = 22;
+    optional int32 DOS = 23;
+    optional double BUP_DOS = 24;
+    optional bool KO1 = 25;  // концевик в +
+    optional bool KO2 = 26;  // концевик в -
+    optional bool ABP1 = 27; // аварийный концевик в +
+    optional bool ABP2 = 28; // аварийный концевик в -
+    optional bool ABP_F1 = 29; // признак аварии УМ фазы 1
+    optional bool ABP_F2 = 30; // признак аварии УМ фазы 2
+    optional bool ABP_F3 = 31; // признак аварии УМ фазы 3
+    optional bool SYNX = 32; // признак синхронизации
+    optional bool OVER_TEMP = 33; // признак перегрева привода
+    optional bool ABP = 34;// признак аварии ОБЩИЙ
+    optional bool BLOCK = 35; // Блокировка
+    optional bool ERROR_CT = 36; // Признак ошибки данных у ВБУП
+    optional bool Error_DOS = 37; // ошибка ДОС,обнаружен сбой после привязки
+}
+
+message SREP
+{
+    required bool real_data = 1;
+    optional int32 work_mode = 16;
+    optional bool bup_net_enable = 17;
+    optional int32 target_mode = 18;
+    optional bool bup_net_ok = 19;
+    optional bool all_power = 20;
+    optional bool motor_power = 21;
+    optional uint32 run_type = 22;
+    optional AXIS az_axis = 23;
+    optional AXIS el_axis = 24;
+    optional uint32 timeStamp = 25;
+}
+
+message MREQ
+{
+    optional int32 set_work_mode = 16;
+    optional int32 set_target_mode = 17;
+    optional bool bup_net_enable = 18;
+    optional bool set_all_power = 19;
+    optional bool set_motor_power = 20;
+    optional bool set_az_power = 21;
+    optional bool set_el_power = 22;
+    optional uint32 set_run_type = 23;
+    optional bool start_affix = 24;
+    repeated uint32 set_data_type = 25;
+    optional int32 tm_data = 26;
+    repeated double set_az_data = 27;
+    repeated double set_el_data = 28;
+    optional range_d set_ref_pos = 29;
+    repeated double track_azimuth = 30;
+    repeated double track_elevation = 31;
+    optional double track_period = 32;
+    optional uint32 track_T0_time = 33;
+    optional uint32 track_T0_date = 34;
+    optional uint32 current_date = 35;
+}

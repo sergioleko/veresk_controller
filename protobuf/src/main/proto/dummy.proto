@@ -1,0 +1,12 @@
+/*
+ *  file:       lrtc/message/dummy.proto
+ *  date:       25.04.2014
+ *  company:    Linkos
+ *  descript.:  Dummy RTC message definition
+ */
+
+syntax = "proto2";
+
+package Linkos.RTC.Message;
+
+message dummy {}

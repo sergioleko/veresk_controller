@@ -1,0 +1,25 @@
+/*
+ *  file:       lrtc/message/rs.proto
+ *  date:       20.03.2018
+ *  company:    Linkos
+ *  descript.:  Range switch (RS) RTC message definition
+ */
+
+syntax = "proto2";
+
+import "range.proto";
+
+package Linkos.RTC.Message.RS;
+
+message CREP
+{   optional string name = 1;
+    required range_i range = 2;
+}
+
+message SREP
+{   required int32 value = 1;
+}
+
+message MREQ
+{   optional int32 value = 1;
+}
