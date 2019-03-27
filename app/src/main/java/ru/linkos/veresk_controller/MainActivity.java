@@ -2,6 +2,8 @@ package ru.linkos.veresk_controller;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.support.design.widget.TextInputLayout;
@@ -11,6 +13,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,28 +25,50 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import Linkos.RTC.Message.AEF.Aef;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE_ERR_NO = "Error_number";
+   // private static final Object Lid;
     String stationIP;
     Handler supportHandler;
     TextInputLayout IpInputLayout;
     String error = "No error";
     InetAddress stationAddress;
     Socket AXSSocket;
+    Socket IRVideoSocket;
+    Socket IROMUSocket;
     String AXSPort = "55555";
+    String IRVideoPort = "30001";
+    String IROMUPort = "30100";
     getSocketAsyncTask AXSgsat;
+    getSocketAsyncTask IRVideogsat;
+    getSocketAsyncTask IROMUgsat;
     TCPOperations tcpo;
     protobufOperations po;
     Thread WiFiThread;
+    Thread VideoThread;
     TextView positionText;
     Handler positionTextHandler;
     boolean killWiFiRunnable;
     boolean targetspeedx;
     boolean targetspeedy;
     boolean targetpositivity;
+    ImageView frameHolder;
+    Handler picHandler;
+    Bitmap frames;
+    Bitmap bufFrame;
+    boolean IRclosed;
+    IRCoverAsyncTask IRCsgatO, IRCsgatC;
+    List<Integer> IROMUdata = new ArrayList<>();
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,10 +81,14 @@ public class MainActivity extends AppCompatActivity {
         supportHandler = new Handler();
         positionTextHandler = new Handler();
         killWiFiRunnable = false;
+        frameHolder = findViewById(R.id.picPlace);
+        picHandler = new Handler();
+        IRclosed = true;
+       
 
     }
 
-    public void startConnection(View view) throws ExecutionException, InterruptedException {
+    public void startConnection(View view) throws ExecutionException, InterruptedException, IOException {
         View starter = findViewById(R.id.starter);
         starter.setVisibility(View.INVISIBLE);
         View controls = findViewById(R.id.controls);
@@ -154,8 +183,17 @@ public class MainActivity extends AppCompatActivity {
         stationIP = IpInputLayout.getEditText().getText().toString();
         AXSgsat = new getSocketAsyncTask(stationIP, AXSPort);
         AXSSocket = AXSgsat.execute().get();
+        IRVideogsat = new getSocketAsyncTask(stationIP, IRVideoPort);
+        IRVideoSocket = IRVideogsat.execute().get();
+        IROMUgsat = new getSocketAsyncTask(stationIP, IROMUPort);
+        IROMUSocket = IROMUgsat.execute().get();
+
+
+
+
+
         if (AXSSocket == null){
-            startError(getApplicationContext(), "Can't start connection on Socket");
+            startError(getApplicationContext(), "Can't start connection on AXS Socket");
         }
         else {
             WiFiThread = new Thread(new Runnable() {
@@ -185,6 +223,8 @@ public class MainActivity extends AppCompatActivity {
                                             Log.i("Device is: ", "ready");
                                             tcpo.sendTCP(AXSSocket, po.makeCreq());
                                             po.parseCrep(tcpo.recieveTCP(AXSSocket));
+                                            tcpo.sendTCP(IROMUSocket, po.makeIROMUCreq());
+                                           IROMUdata = po.parseIROMUCrep(tcpo.recieveTCP(IROMUSocket));
                                             AXSControl();
                                             break;
                                         case 2:
@@ -193,14 +233,6 @@ public class MainActivity extends AppCompatActivity {
                                             startError(getApplicationContext(), "Station is busy");
                                             break;
                                     }
-
-
-
-
-
-
-
-
 
                                     }
                                  else {
@@ -227,8 +259,36 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
+
+
+            VideoThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        final Bitmap settingFrame = getVideo();
+                        bufFrame = null;
+                        if (IRclosed)
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                    if (bufFrame != settingFrame) {
+                                        setFrame(settingFrame);
+                                        bufFrame = settingFrame;
+                                    }
+                                }
+
+
+                        });
+                    }
+                }
+                }
+            );
+
             WiFiThread.setDaemon(true);
             WiFiThread.start();
+            VideoThread.setDaemon(true);
+            VideoThread.start();
 
         }
     }
@@ -236,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
     public void AXSControl() throws IOException, NoSuchAlgorithmException {
 
         while (!killWiFiRunnable) {
-           // tcpo.sendTCP(AXSSocket, po.makeSreq());
+
 
 
 
@@ -248,7 +308,9 @@ public class MainActivity extends AppCompatActivity {
                     updateCurrentPosition(recievedPosition);
                 }
             });
-            //po.parseMrep(tcpo.recieveTCP(AXSSocket));
+
+
+
 
 
         }
@@ -269,9 +331,42 @@ public class MainActivity extends AppCompatActivity {
         positionText.setText("X position: " + curPosX + "\t" + "Y position: " + curPosY);
     }
 
+    public Bitmap getVideo (){
+        if (IRVideoSocket != null){
+            byte[] pic = new byte[0];
+            try {
+                pic = tcpo.recieveTCP(IRVideoSocket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            frames = BitmapFactory.decodeByteArray(pic, 0, pic.length);
+
+    }
+        return frames;
+}
+
+    public void setFrame (Bitmap picture){
+
+        frameHolder.setImageBitmap(picture);
+    }
+
+    public void openIRCover (View view){
+
+        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_OPEN);
+
+    }
+
+    public void closeIRCover (View view){
+
+        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
+
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         WiFiThread.interrupt();
+        VideoThread.interrupt();
     }
 }

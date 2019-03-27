@@ -1,6 +1,8 @@
 package ru.linkos.veresk_controller;
 
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import Linkos.RTC.Message.AEF.Aef;
 import Linkos.RTC.Message.AXS.Axs;
 import Linkos.RTC.Message.GenericOuterClass;
 import Linkos.RTC.Message.Range;
@@ -28,6 +31,8 @@ public class protobufOperations {
     double xspdmax;
     double yspdmax;
     List<Integer> dataList = new ArrayList<>();
+    List<Integer> IROMUdataList = new ArrayList<>();
+
 
     public byte[] makeSreqProto () throws IOException {
 
@@ -221,7 +226,7 @@ public class protobufOperations {
             curXpos = axsSrep.getXposition();
             curYpos = axsSrep.getYposition();
 
-            Log.i("Cur pos:", curXpos + "\t" + curYpos);
+            //Log.i("Cur pos:", curXpos + "\t" + curYpos);
 
             return String.valueOf(curXpos) + ";" + String.valueOf(curYpos);
         }
@@ -233,6 +238,87 @@ public class protobufOperations {
             Log.i("Status:", "No mrep");
             return "0;0";
         }
+    }
+
+    public byte[] sendAEFMreq (Aef.MREQ.Lid lid, List<Integer> IROMUdataList) throws InvalidProtocolBufferException {
+
+        GenericOuterClass.Generic.Builder gocB = GenericOuterClass.Generic.newBuilder();
+        gocB.getDefaultInstanceForType();
+        gocB.setMid(1178943811);
+        GenericOuterClass.MREQ.Builder mreq = GenericOuterClass.MREQ.newBuilder();
+        mreq.setMd5A(IROMUdataList.get(0));
+        //Log.i("MD5A", String.valueOf(dataList.get(0)));
+        mreq.setMd5B(IROMUdataList.get(1));
+        //Log.i("MD5B", String.valueOf(dataList.get(1)));
+        mreq.setMd5C(IROMUdataList.get(2));
+        //Log.i("MD5C", String.valueOf(dataList.get(2)));
+        mreq.setMd5D(IROMUdataList.get(3));
+        //Log.i("MD5D", String.valueOf(dataList.get(3)));
+        mreq.setPriority(0);
+        Aef.MREQ.Builder aefMreq = Aef.MREQ.newBuilder();
+       // Aef.MREQ.Lid lidlid = Aef.MREQ.Lid.valueOf(lid);
+        aefMreq.setLid(lid);
+        Log.i("Lid: ", String.valueOf(lid));
+        mreq.setAef(aefMreq.build());
+        gocB.setMreq(mreq.build());
+        Log.i("return: ", Arrays.toString(gocB.build().toByteArray()));
+        return gocB.build().toByteArray();
+
+
+
+
+    }
+
+    public List<Integer> parseIROMUCrep(byte[] incoming) throws InvalidProtocolBufferException, NoSuchAlgorithmException {
+        GenericOuterClass.Generic input = GenericOuterClass.Generic.parseFrom(incoming);
+
+        if (input.hasCrep()) {
+            Log.i("Crep", "Yes");
+            GenericOuterClass.CREP crep = input.getCrep();
+            Aef.CREP AefCrep = crep.getAef();
+
+
+
+            byte[] hash = MessageDigest.getInstance("MD5").digest(incoming);
+            Log.i("Hash len: ", String.valueOf(hash.length));
+            IROMUdataList.clear();
+            for (int i = 0; i < hash.length; i += 4) {
+                Log.i("i: ", String.valueOf(i));
+                int floatBits = hash[i] & 0xFF |
+                        (hash[i + 1] & 0xFF) << 8 |
+                        (hash[i + 2] & 0xFF) << 16 |
+                        (hash[i + 3] & 0xFF) << 24;
+
+                IROMUdataList.add(floatBits);
+
+
+
+
+
+            }
+            Log.i("dataListlen: ", String.valueOf(IROMUdataList.size()));
+
+
+        }
+        else {
+            Log.e("No crep", " recieved");
+        }
+        return IROMUdataList;
+    }
+
+
+    public byte[] makeIROMUCreq() {
+
+        GenericOuterClass.Generic.Builder gocB = GenericOuterClass.Generic.newBuilder();
+
+        gocB.getDefaultInstanceForType();
+        gocB.setMid(1178943811);
+        GenericOuterClass.CREQ.Builder creq = GenericOuterClass.CREQ.newBuilder();
+        creq.getDefaultInstanceForType();
+        gocB.setCreq(creq);
+        Log.i("Creq ", Arrays.toString(gocB.build().toByteArray()));
+        return gocB.build().toByteArray();
+
     }
 
     }
