@@ -1,17 +1,25 @@
 package ru.linkos.veresk_controller;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.RequiresApi;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -66,13 +74,19 @@ public class MainActivity extends AppCompatActivity {
     boolean IRclosed;
     IRCoverAsyncTask IRCsgatO, IRCsgatC;
     List<Integer> IROMUdata = new ArrayList<>();
+    View starter, controls, IRcontrols, IZMcontrols, TVOcontrols;
+    ViewGroup.LayoutParams lp;
 
 
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         super.onCreate(savedInstanceState);
+       // getSupportActionBar().hide();
         setContentView(R.layout.activity_main);
         IpInputLayout = findViewById(R.id.ipInputBox);
         positionText = findViewById(R.id.textViewPosition);
@@ -84,15 +98,22 @@ public class MainActivity extends AppCompatActivity {
         frameHolder = findViewById(R.id.picPlace);
         picHandler = new Handler();
         IRclosed = true;
-       
+
+        lp =  frameHolder.getLayoutParams();
+
+
 
     }
 
     public void startConnection(View view) throws ExecutionException, InterruptedException, IOException {
-        View starter = findViewById(R.id.starter);
+        starter = findViewById(R.id.starter);
         starter.setVisibility(View.INVISIBLE);
-        View controls = findViewById(R.id.controls);
+        controls = findViewById(R.id.controls);
         controls.setVisibility(View.VISIBLE);
+        IRcontrols = findViewById(R.id.IRControls);
+        IRcontrols.setVisibility(View.VISIBLE);
+
+
 
         Button up = findViewById(R.id.upButton);
         Button right = findViewById(R.id.rightButton);
@@ -326,8 +347,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateCurrentPosition (String curPos){
         String[] positions = curPos.split(";");
-        String curPosX = positions[0];
-        String curPosY = positions[1];
+        String curPosX = positions[0].substring(0, positions[0].indexOf(".")+2);
+        String curPosY =  positions[1].substring(0, positions[1].indexOf(".")+2);
         positionText.setText("X position: " + curPosX + "\t" + "Y position: " + curPosY);
     }
 
@@ -346,9 +367,83 @@ public class MainActivity extends AppCompatActivity {
         return frames;
 }
 
+    @SuppressLint("ClickableViewAccessibility")
     public void setFrame (Bitmap picture){
 
         frameHolder.setImageBitmap(picture);
+
+        final GestureDetector gd = new GestureDetector(getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+
+                //your action here for double tap e.g.
+                Log.d("OnDoubleTapListener", "onDoubleTap");
+
+
+
+                return true;
+            }
+
+
+
+            @Override
+            public boolean onDown(MotionEvent event) {
+                Log.d("TAG","onDown: ");
+
+                // don't return false here or else none of the other
+                // gestures will work
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                Log.i("TAG", "onSingleTapConfirmed: ");
+                return true;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                if (frameHolder.getLayoutParams() != controls.getLayoutParams()){
+                  frameHolder.setLayoutParams(controls.getLayoutParams());
+                }
+                else {
+                    frameHolder.setLayoutParams(lp);
+                }
+                Log.i("TAG", "onLongPress: ");
+            }
+
+
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2,
+                                    float distanceX, float distanceY) {
+                Log.i("TAG", "onScroll: ");
+                return true;
+            }
+
+            @Override
+            public boolean onFling(MotionEvent event1, MotionEvent event2,
+                                   float velocityX, float velocityY) {
+                Log.d("TAG", "onFling: ");
+                return true;
+            }
+
+        });
+        View.OnTouchListener touchListener = new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // pass the events to the gesture detector
+                // a return value of true means the detector is handling it
+                // a return value of false means the detector didn't
+                // recognize the event
+                Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
+                return gd.onTouchEvent(event);
+
+            }
+        };
+
+        frameHolder.setOnTouchListener(touchListener);
     }
 
     public void openIRCover (View view){
@@ -366,7 +461,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
         WiFiThread.interrupt();
         VideoThread.interrupt();
     }
+
+
 }
