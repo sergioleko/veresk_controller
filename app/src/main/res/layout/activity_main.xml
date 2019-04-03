@@ -2,9 +2,112 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/father"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/TVOControls"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
+
+        <Button
+            android:id="@+id/button7"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:text="Button" />
+
+        <Button
+            android:id="@+id/TVOCoverO"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginEnd="480dp"
+            android:layout_marginRight="480dp"
+            android:layout_marginBottom="254dp"
+            android:text="Button"
+            app:layout_constraintBottom_toTopOf="@+id/TVOZoomOutButton"
+            app:layout_constraintEnd_toStartOf="@+id/TVOCoverC"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Open" />
+
+        <Button
+            android:id="@+id/TVOCoverC"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginStart="535dp"
+            android:layout_marginLeft="535dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginBottom="140dp"
+            android:text="Close"
+            app:layout_constraintBottom_toTopOf="@+id/TVOFocusInButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/TVOFocusInButton"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginStart="535dp"
+            android:layout_marginLeft="535dp"
+            android:layout_marginTop="197dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginRight="2dp"
+            android:text="Foc+"
+            app:layout_constraintBottom_toTopOf="@+id/TVOFocusOutButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/TVOFocusOutButton"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:layout_marginStart="535dp"
+            android:layout_marginLeft="535dp"
+            android:layout_marginTop="252dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginRight="2dp"
+            android:text="Foc-"
+            app:layout_constraintBottom_toTopOf="@+id/TVOZoomInButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/TVOZoomOutButton"
+            android:layout_width="55dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="504dp"
+            android:layout_marginRight="504dp"
+            android:text="Z-"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0" />
+
+        <Button
+            android:id="@+id/TVOZoomInButton"
+            android:layout_width="55dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="480dp"
+            android:layout_marginLeft="480dp"
+            android:layout_marginTop="304dp"
+            android:layout_marginEnd="3dp"
+            android:layout_marginRight="3dp"
+            android:text="Z+"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/TVOZoomOutButton"
+            app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/picCon"
@@ -18,12 +121,31 @@
         <ImageView
             android:id="@+id/picPlace"
             android:layout_width="479dp"
-            android:layout_height="244dp"
+            android:layout_height="355dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:srcCompat="@tools:sample/avatars" />
+
+        <TextView
+            android:id="@+id/textViewPosition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:shadowColor="@android:color/black"
+            android:shadowDx="5"
+            android:shadowDy="5"
+            android:text="TextView"
+            android:textColor="@android:color/black"
+            android:textColorHighlight="@android:color/black"
+            android:textColorHint="@android:color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0" />
     </android.support.constraint.ConstraintLayout>
 
     <android.support.constraint.ConstraintLayout
@@ -38,8 +160,8 @@
 
         <Button
             android:id="@+id/IRCoverC"
-            android:layout_width="74dp"
-            android:layout_height="wrap_content"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="8dp"
             android:layout_marginLeft="8dp"
             android:layout_marginBottom="8dp"
@@ -54,8 +176,8 @@
 
         <Button
             android:id="@+id/IRCoverO"
-            android:layout_width="74dp"
-            android:layout_height="wrap_content"
+            android:layout_width="53dp"
+            android:layout_height="45dp"
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="8dp"
@@ -78,25 +200,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/textViewPosition"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:shadowColor="@android:color/black"
-            android:shadowDx="5"
-            android:shadowDy="5"
-            android:text="TextView"
-            android:textColor="@android:color/white"
-            android:textColorHighlight="@android:color/black"
-            android:textColorHint="@android:color/black"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.827" />
 
         <Button
             android:id="@+id/upButton"

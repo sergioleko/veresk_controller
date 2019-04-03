@@ -42,4 +42,8 @@ public class TCPOperations {
 
     }
 
+    public Socket getSocket(String stationIP, String targetPort) throws IOException {
+        return new Socket(stationIP, Integer.decode(targetPort));
+    }
+
 }
