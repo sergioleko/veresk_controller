@@ -53,6 +53,10 @@ public class protobufOperations {
     Axs.CREP AxsCrep;
 
 
+
+    Lens.MREQ.Builder lensMreq;
+    Lens.MREQ.Unit.Builder lensMreqUnit;
+
     /*public byte[] makeSreqProto() throws IOException {
 
         GenericOuterClass.Generic.Builder gocB = GenericOuterClass.Generic.newBuilder();
@@ -149,7 +153,7 @@ public class protobufOperations {
         }
     }
 
-   /* public String parseSrep(byte[] bytes) throws InvalidProtocolBufferException {
+    public String parseSrep(byte[] bytes) throws InvalidProtocolBufferException {
 
 
         GenericOuterClass.Generic input = GenericOuterClass.Generic.parseFrom(bytes);
@@ -225,7 +229,7 @@ public class protobufOperations {
         gocB.setMreq(mreq.build());
         return gocB.build().toByteArray();
 
-    }*/
+    }
 
 
     public String parseMrep(byte[] bytes) throws InvalidProtocolBufferException {
@@ -236,12 +240,13 @@ public class protobufOperations {
             GenericOuterClass.SREP mrep = input.getMrep();
 
             Axs.SREP axsSrep = mrep.getAxs();
-
+          //  curXpos = 0;
+           // curYpos = 0;
             curXpos = axsSrep.getXposition();
             curYpos = axsSrep.getYposition();
 
             //Log.i("Cur pos:", curXpos + "\t" + curYpos);
-
+         //   Log.i("Status:", String.valueOf(curXpos) + ";" + String.valueOf(curYpos));
             return String.valueOf(curXpos) + ";" + String.valueOf(curYpos);
         }
 
@@ -479,29 +484,30 @@ public class protobufOperations {
 
     }*/
 
-    public byte[] makeTVOCreq (){
+    public byte[] makeTVOCreq (int mid){
         GenericOuterClass.Generic.Builder gocB = GenericOuterClass.Generic.newBuilder();
 
         gocB.getDefaultInstanceForType();
-        gocB.setMid(2020177511);
+        gocB.setMid(mid);
         GenericOuterClass.CREQ.Builder creq = GenericOuterClass.CREQ.newBuilder();
         creq.getDefaultInstanceForType();
         gocB.setCreq(creq);
-        //Log.i("Creq ", Arrays.toString(gocB.build().toByteArray()));
+        //Log.i("Creq TVO", Arrays.toString(gocB.build().toByteArray()));
         return gocB.build().toByteArray();
     }
 
     public List<Integer> parseTVOOMUCrep(byte[] incoming) throws NoSuchAlgorithmException, InvalidProtocolBufferException {
+
         GenericOuterClass.Generic input = GenericOuterClass.Generic.parseFrom(incoming);
 
         if (input.hasCrep()) {
-            Log.i("Crep", "Yes");
+            //Log.i("Crep", "Yes");
             GenericOuterClass.CREP crep = input.getCrep();
             TVOOMUCrep = crep.getAef();
 
 
             byte[] hash = MessageDigest.getInstance("MD5").digest(incoming);
-            Log.i("Hash len: ", String.valueOf(hash.length));
+           // Log.i("Hash len: ", String.valueOf(hash.length));
             TVOOMUdataList.clear();
             for (int i = 0; i < hash.length; i += 4) {
                 Log.i("i: ", String.valueOf(i));
@@ -525,6 +531,7 @@ public class protobufOperations {
 
 
     public List<Integer> parseTVOLensCrep(byte[] incoming) throws NoSuchAlgorithmException, InvalidProtocolBufferException {
+        Log.i("i'm", "started");
         GenericOuterClass.Generic input = GenericOuterClass.Generic.parseFrom(incoming);
 
         if (input.hasCrep()) {
@@ -588,11 +595,11 @@ public class protobufOperations {
         return TVOCamdataList;
     }
 
-    public byte[] makeTVOLensMreq(List<Integer> hashData) {
-
+    public byte[] makeTVOLensMreq(List<Integer> hashData, int speed, int speedFocus) {
+      //  Log.i("Mreq", "started");
         GenericOuterClass.Generic.Builder gocB = GenericOuterClass.Generic.newBuilder();
         gocB.getDefaultInstanceForType();
-        gocB.setMid(2020177511);
+        gocB.setMid(1313164355);
         GenericOuterClass.MREQ.Builder mreq = GenericOuterClass.MREQ.newBuilder();
 
         mreq.setMd5A(hashData.get(0));
@@ -606,16 +613,55 @@ public class protobufOperations {
         mreq.setPriority(0);
 
 
-        Lens.MREQ.Builder lensMreq = Lens.MREQ.newBuilder();
+        lensMreq = Lens.MREQ.newBuilder();
+        lensMreqUnit = Lens.MREQ.Unit.newBuilder();
 
         switch (TVOLensCrep.getZoom().getControl()){
             case CM_STEP:
+                Log.i("Zoom ", "step");
+                break;
+
+            case CM_SPEED:
+             //   Log.i("Zoom ", String.valueOf(speed * (TVOLensCrep.getZoom().getRange().getMax()/2)));
+                lensMreqUnit.setSpeed(speed * (TVOLensCrep.getZoom().getRange().getMax()));
+                break;
+
+            case CM_POSITION:
+                Log.i("Zoom ", "pos");
+                break;
+
+            case CM_SPEED_STEP:
+                Log.i("Zoom ", "speedstep");
+                break;
+
+            case CM_FIXED_SPEED:
+                Log.i("Zoom ", "fixspeed");
+                break;
 
 
         }
+        lensMreq.setZoom(lensMreqUnit.build());
 
-        lensMreq.
 
+        switch (TVOLensCrep.getFocus().getControl()){
+            case CM_FIXED_SPEED:
+                Log.i("Focus ", "fix speed");
+                break;
+            case CM_SPEED_STEP:
+                Log.i("Focus ", "step speed");
+                break;
+            case CM_POSITION:
+                Log.i("Focus ", "pos");
+                break;
+            case CM_SPEED:
+                Log.i("Focus ", "speed");
+                lensMreqUnit.setSpeed(speedFocus *(TVOLensCrep.getFocus().getRange().getMax()));
+                break;
+            case CM_STEP:
+                Log.i("Focus ", "step");
+                break;
+        }
+lensMreq.setFocus(lensMreqUnit.build());
 
 
         mreq.setLens(lensMreq.build());

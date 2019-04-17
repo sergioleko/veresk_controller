@@ -8,7 +8,7 @@
     tools:context=".MainActivity">
 
     <android.support.constraint.ConstraintLayout
-        android:id="@+id/TVOControls"
+        android:id="@+id/chanControls"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="invisible">

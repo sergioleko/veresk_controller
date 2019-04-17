@@ -8,6 +8,8 @@ import android.graphics.BitmapFactory;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.TextInputLayout;
@@ -34,15 +36,19 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import Linkos.RTC.Message.AEF.Aef;
+import Linkos.RTC.Message.Lens.Lens;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String EXTRA_MESSAGE_ERR_NO = "Error_number";
-   // private static final Object Lid;
+    // private static final Object Lid;
     WifiManager wfm;
     String stationIP;
     Handler supportHandler;
@@ -61,11 +67,15 @@ public class MainActivity extends AppCompatActivity {
     String TVOVideoPort = "30000";
     String TVOCamPort = "30300";
     String TVOLensPort = "30200";
-    String TVOOMUPort ="30100";
+    String TVOOMUPort = "30100";
     String TVIVideoPort = "30002";
     String TVICamPort = "30302";
     String TVILensPort = "30202";
     String TVIOMUPort = "30102";
+
+    String curpossum;
+    String recievedPosition = "No position recieved";
+
 
     getSocketAsyncTask AXSgsat;
     getSocketAsyncTask IRVideogsat;
@@ -109,158 +119,88 @@ public class MainActivity extends AppCompatActivity {
     List<Integer> TVOCameradata = new ArrayList<>();
     List<Integer> TVOOMUdata = new ArrayList<>();
     List<Integer> TVOLensdata = new ArrayList<>();
-    View starter, controls, IRcontrols, IZMcontrols, TVOcontrols;
+    View starter, controls, chancontrols;;
     ViewGroup.LayoutParams lp;
     float xs = 0, xy = 0, bx = 0, by = 0;
     List<Float> comparator;
     List<Socket> componentSockets = new ArrayList<>();
     List<Integer> mids = new ArrayList<>();
-     boolean AXSexists;
-     boolean stationreachable;
-     boolean IRexists;
-     boolean TVIexists;
-     boolean TVOexists;
+    boolean AXSexists;
+    boolean stationreachable;
+    boolean IRexists;
+    boolean TVIexists;
+    boolean TVOexists;
     volatile boolean startexecuted = false;
     Socket activeVideoSocket;
 
+
+
     enum activeChan {TVO, TVI, IR}
-    activeChan activeCam;
 
+    activeChan activeCam = activeChan.TVO;
 
+    int videoMid = 1398292803,
+        aefMid = 1178943811,
+        lensMid = 1313164355,
+        cameraMid = 1296122691;
+
+    int TVOZoom = 0;
+    int TVOFocus = 0;
+
+    Handler mHandler;
+
+    Runnable r;
+    Runnable run;
+
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //switching on fullscreen, setting display always on
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         //system needed stuff
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mids.add(1398292803);
-        mids.add(1178943811); //AEF
-        mids.add(2020177511); //Lens
-        mids.add(2003134311); //Cam
-        mids.add(1398292803);
-        mids.add(1178943811);
-        mids.add(2020177511);
-        mids.add(2003134311);
-        mids.add(1398292803);
-        mids.add(1178943811);
-        mids.add(2020177511);
-        mids.add(2003134311);
 
-        //startexecuted = false;
+        positionTextHandler = new Handler(){
+            public void handleMessage(Message msg){
+                Log.i("msg ", (String) msg.obj);
+                positionText.setText((String) msg.obj);
+            }
+        };
 
         IpInputLayout = findViewById(R.id.ipInputBox);
         positionText = findViewById(R.id.textViewPosition);
         tcpo = new TCPOperations();
         po = new protobufOperations();
         supportHandler = new Handler();
-        positionTextHandler = new Handler();
+
         killWiFiRunnable = false;
         frameHolder = findViewById(R.id.picPlace);
         picHandler = new Handler();
-       // IRclosed = true;
 
-        lp =  frameHolder.getLayoutParams();
+
+        lp = frameHolder.getLayoutParams();
+
         comparator = new ArrayList<>(4);
-        comparator.add(0,0.0f);
-        comparator.add(1,0.0f);
+        comparator.add(0, 0.0f);
+        comparator.add(1, 0.0f);
         comparator.add(2, 0.0f);
         comparator.add(3, 0.0f);
+
 
     }
 
     public void startConnection(View view) throws ExecutionException, InterruptedException, IOException, NoSuchAlgorithmException {
+
+        stationIP = IpInputLayout.getEditText().getText().toString();
+
         starter = findViewById(R.id.starter);
         starter.setVisibility(View.INVISIBLE);
         controls = findViewById(R.id.controls);
-        //controls.setVisibility(View.VISIBLE);
-        IRcontrols = findViewById(R.id.IRControls);
-        TVOcontrols = findViewById(R.id.TVOControls);
-        // IRcontrols.setVisibility(View.VISIBLE);
-
-
-       /* Button up = findViewById(R.id.upButton);
-        Button right = findViewById(R.id.rightButton);
-        Button down = findViewById(R.id.downButton);
-        Button left = findViewById(R.id.leftButton);
-
-        targetspeedx = false;
-        targetspeedy = false;
-        targetpositivity = false;*/
-
-
-        /*up.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        // PRESSED
-                        targetspeedy = true;
-                        targetpositivity = false;
-
-                        return true; // if you want to handle the touch event
-                    case MotionEvent.ACTION_UP:
-                        // RELEASED
-                        targetspeedy = false;
-
-                        return true; // if you want to handle the touch event
-                }
-                return false;
-            }
-        });
-        down.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        // PRESSED
-                        targetspeedy = true;
-                        targetpositivity = true;
-                        return true; // if you want to handle the touch event
-                    case MotionEvent.ACTION_UP:
-                        // RELEASED
-                        targetspeedy = false;
-                        return true; // if you want to handle the touch event
-                }
-                return false;
-            }
-        });
-        left.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        // PRESSED
-                        targetspeedx = true;
-                        targetpositivity = false;
-                        return true; // if you want to handle the touch event
-                    case MotionEvent.ACTION_UP:
-                        // RELEASED
-                        targetspeedx = false;
-                        return true; // if you want to handle the touch event
-                }
-                return false;
-            }
-        });
-        right.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        // PRESSED
-                        targetspeedx = true;
-                        targetpositivity = true;
-                        return true; // if you want to handle the touch event
-                    case MotionEvent.ACTION_UP:
-                        // RELEASED
-                        targetspeedx = false;
-                        return true; // if you want to handle the touch event
-                }
-                return false;
-            }
-        });*/
+        chancontrols = findViewById(R.id.chanControls);
+        chancontrols.setVisibility(View.VISIBLE);
 
 
         final WifiManager wfm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
@@ -268,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
         startCheck = new Thread(new Runnable() {
             @Override
             public void run() {
+
                 if (wfm != null && wfm.isWifiEnabled()) {
 
                     try {
@@ -276,15 +217,14 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                     try {
-                        if (stationAddress.isReachable(200)) {
+                        if (stationAddress.isReachable(1000)) {
 
                             stationreachable = true;
 
-                            stationIP = IpInputLayout.getEditText().getText().toString();
-                            //                           AXSgsat = new getSocketAsyncTask(stationIP, AXSPort);
-//                            AXSSocket = AXSgsat.execute().get();
+
+
                             AXSSocket = tcpo.getSocket(stationIP, AXSPort);
-                            //Log.i("AXS ", String.valueOf(AXSSocket));
+
                             IRVideoSocket = tcpo.getSocket(stationIP, IRVideoPort);
                             IROMUSocket = tcpo.getSocket(stationIP, IROMUPort);
                             IRLensSocket = tcpo.getSocket(stationIP, IRLensPort);
@@ -299,51 +239,7 @@ public class MainActivity extends AppCompatActivity {
                             TVIOMUSocket = tcpo.getSocket(stationIP, TVIOMUPort);
                             TVILensSocket = tcpo.getSocket(stationIP, TVILensPort);
                             TVICamSocket = tcpo.getSocket(stationIP, TVICamPort);
-                       /*     IRVideogsat = new getSocketAsyncTask(stationIP, IRVideoPort);
-                            IRVideoSocket = IRVideogsat.execute().get();
-                            IROMUgsat = new getSocketAsyncTask(stationIP, IROMUPort);
-                            IROMUSocket = IROMUgsat.execute().get();
-                            IRLensgsat = new getSocketAsyncTask(stationIP, IRLensPort);
-                            IRLensSocket = IRLensgsat.execute().get();
-                            IRCamgsat = new getSocketAsyncTask(stationIP, IRCamPort);
-                            IRCamSocket = IRCamgsat.execute().get();
-                            TVOVideogsat = new getSocketAsyncTask(stationIP, TVOVideoPort);
-                            TVOVideoSocket = TVOVideogsat.execute().get();
-                            TVOCamgsat = new getSocketAsyncTask(stationIP, TVOCamPort);
-                            TVOCamSocket = TVOCamgsat.execute().get();
-                            TVOLensgsat = new getSocketAsyncTask(stationIP, TVOLensPort);
-                            TVOLensSocket = TVOLensgsat.execute().get();
-                            TVOOMUgsat = new getSocketAsyncTask(stationIP, TVOOMUPort);
-                            TVOOMUSocket = TVOOMUgsat.execute().get();
-                            TVIVideogsat = new getSocketAsyncTask(stationIP, TVIVideoPort);
-                            TVIVideoSocket = TVIVideogsat.execute().get();
-                            TVICamgsat = new getSocketAsyncTask(stationIP, TVICamPort);
-                            TVICamSocket = TVICamgsat.execute().get();
-                            TVILensgsat = new getSocketAsyncTask(stationIP, TVILensPort);
-                            TVILensSocket = TVILensgsat.execute().get();
-                            TVIOMUgsat = new getSocketAsyncTask(stationIP, TVIOMUPort);
-                            TVIOMUSocket = TVIOMUgsat.execute().get();
 
-
-                            componentSockets.add(AXSSocket);
-
-                            // componentSockets.add(IRVideoSocket);
-                            componentSockets.add(IROMUSocket);
-                            componentSockets.add(IRLensSocket);
-                            componentSockets.add(IRCamSocket);
-
-                            //componentSockets.add(TVOVideoSocket);
-                            componentSockets.add(TVOOMUSocket);
-                            componentSockets.add(TVOLensSocket);
-                            componentSockets.add(TVOCamSocket);
-
-                            //componentSockets.add(TVIVideoSocket);
-                            componentSockets.add(TVIOMUSocket);
-                            componentSockets.add(TVILensSocket);
-                            componentSockets.add(TVICamSocket);
-
-
-                            Log.i("List ", String.valueOf(componentSockets));*/
 
                         } else {
                             stationreachable = false;
@@ -351,158 +247,141 @@ public class MainActivity extends AppCompatActivity {
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } /*catch (ExecutionException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }*/
-                    // Log.i("AXS S ", String.valueOf(AXSSocket));
+                    }
+
+
                     if (AXSSocket == null) {
-                        //startError(getApplicationContext(), "Can't start connection on AXS Socket");
+
                         AXSexists = false;
-//                        Toast.makeText(getApplicationContext(), "AXS not avaliable", Toast.LENGTH_SHORT).show();
+//
                     } else {
                         AXSexists = true;
                         try {
                             tcpo.sendTCP(AXSSocket, po.makeAXSCreq());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        try {
                             AXSdata = po.parseAXSCrep(tcpo.recieveTCP(AXSSocket));
-                            //Log.i("AXS data ", String.valueOf(AXSdata));
+
                         } catch (NoSuchAlgorithmException e) {
                             e.printStackTrace();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
-                    //Log.i("AXSexists ", String.valueOf(AXSexists));
-                    IRexists = IRVideoSocket != null;
 
+                    IRexists = IRVideoSocket != null;
 
                     TVOexists = TVOVideoSocket != null;
 
                     TVIexists = TVIVideoSocket != null;
+
+                    if (TVOexists) {
+
+                        try {
+                            tcpo.sendTCP(TVOOMUSocket, po.makeTVOCreq(aefMid));
+                            TVOOMUdata = po.parseTVOOMUCrep(tcpo.recieveTCP(TVOOMUSocket));
+
+
+                            tcpo.sendTCP(TVOLensSocket, po.makeTVOCreq(lensMid));
+                            TVOLensdata = po.parseTVOLensCrep(tcpo.recieveTCP(TVOLensSocket));
+
+                            tcpo.sendTCP(TVOCamSocket, po.makeTVOCreq(cameraMid));
+                            TVOCameradata = po.parseTVOCamCrep(tcpo.recieveTCP(TVOCamSocket));
+
+                            activeCam = activeChan.TVO;
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchAlgorithmException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+
+                    switch (activeCam) {
+
+                        case TVO:
+                            Button TVOZIB = findViewById(R.id.TVOZoomInButton);
+                            Button TVOZOB = findViewById(R.id.TVOZoomOutButton);
+                            Button TVOFIB = findViewById(R.id.TVOFocusInButton);
+                            Button TVOFOB = findViewById(R.id.TVOFocusOutButton);
+                            TVOZIB.setOnTouchListener(ZoomInTouchListener);
+                            TVOZOB.setOnTouchListener(ZoomOutTouchListener);
+                            TVOFIB.setOnTouchListener(FocusInTouchListener);
+                            TVOFOB.setOnTouchListener(FocusOutTouchListener);
+                    }
+
+
 
                 } else {
                     stationreachable = false;
                     startError(getApplicationContext(), "WiFi not enabled.");
                 }
                 startexecuted = true;
+                interStater();
             }
+
         });
 
 
         WiFiThread = new Thread(new Runnable() {
+
             @Override
+
             public void run() {
 
 
-                if (wfm != null && wfm.isWifiEnabled()) {
 
-                    try {
-                        if (stationAddress.isReachable(200)) {
-                            stationreachable = true;
-                                    /*tcpo.sendTCP(AXSSocket, po.makeSreqProto());
-                                    switch (po.parseSrepProto(tcpo.recieveTCP(AXSSocket))) {
-                                        case 0:
-                                            Log.i("Device is: ", "not ready");
-                                            killWiFiRunnable = true;
-                                            startError(getApplicationContext(), "Station is not ready");
-                                            //WiFiThread.interrupt();
-                                            break;
-                                        case 1:
-                                            Log.i("Device is: ", "ready");
-                                            tcpo.sendTCP(AXSSocket, po.makeCreq());
-                                            po.parseCrep(tcpo.recieveTCP(AXSSocket));
-                                            tcpo.sendTCP(TVOLensSocket, po.makeTVOLensCreq());
-                                            TVOLensdata = po.parseTVOLensCrep(tcpo.recieveTCP(TVOLensSocket));
-//                                            tcpo.sendTCP(IROMUSocket, po.makeIROMUCreq());
-  //                                         IROMUdata = po.parseIROMUCrep(tcpo.recieveTCP(IROMUSocket));
-    //                                        tcpo.sendTCP(IRLensSocket, po.makeIRLensCreq());
+                while (wfm != null && wfm.isWifiEnabled()) {
 
 
-                                            AXSControl();
-                                            break;
-                                        case 2:
-                                            Log.i("Device is: ", "ready but busy");
-                                            killWiFiRunnable = true;
-                                            startError(getApplicationContext(), "Station is busy");
-                                            break;
-                                    }
-*/
-                        } else {
-                            stationreachable = false;
-                            startError(getApplicationContext(), "Station unreachable");
-                            //break;
+                    if (stationreachable) {
+                        try {
+                            if (stationAddress.isReachable(1000)) {
+                                stationreachable = true;
+
+                            } else {
+                                stationreachable = false;
+                                startError(getApplicationContext(), "Station unreachable");
+
+
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+
+
                     }
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
 
-
-                } else {
-                    //killWiFiRunnable = true;
-                    stationreachable = false;
-                    startError(getApplicationContext(), "WiFi not enabled.");
-
+                    }
                 }
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+
             }
         });
 
 
         controlThread = new Thread(new Runnable() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public void run() {
-                if (stationreachable) {
+                while (stationreachable){
 
                     try {
                         AXSControl();
+                        LensControl();
+                        Thread.sleep(100);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (NoSuchAlgorithmException e) {
                         e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
 
-                    if (TVOexists){
-                        try {
-                            tcpo.sendTCP(TVOOMUSocket, po.makeTVOCreq());
-                            TVOOMUdata = po.parseTVOOMUCrep(tcpo.recieveTCP(TVOOMUSocket));
-                            tcpo.sendTCP(TVOLensSocket, po.makeTVOCreq());
-                            TVOLensdata = po.parseTVOLensCrep(tcpo.recieveTCP(TVOLensSocket));
-                            tcpo.sendTCP(TVOCamSocket, po.makeTVOCreq());
-                            TVOCameradata = po.parseTVOCamCrep(tcpo.recieveTCP(TVOCamSocket));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchAlgorithmException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (IRexists){
-                        try {
-                            tcpo.sendTCP(IROMUSocket, po.makeIROMUCreq());
-                            IROMUdata = po.parseIROMUCrep(tcpo.recieveTCP(IROMUSocket));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchAlgorithmException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-
-
-
-
-                } else {
-                    //Thread.interrupted();
                 }
-
             }
         });
 
@@ -512,7 +391,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
 
                 while (stationreachable) {
-                    switch (activeCam){
+                    switch (activeCam) {
                         case IR:
                             activeVideoSocket = IRVideoSocket;
                             break;
@@ -521,22 +400,11 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         case TVO:
                             activeVideoSocket = TVOVideoSocket;
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    TVOcontrols.setVisibility(View.VISIBLE);
-                                }
-                            });
-
                             break;
                     }
 
                     final Bitmap settingFrame = getVideo(activeVideoSocket);
-                    //Log.i("Pic: ", String.valueOf(settingFrame));
                     bufFrame = null;
-
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -544,6 +412,7 @@ public class MainActivity extends AppCompatActivity {
                                 setFrame(settingFrame);
                                 bufFrame = settingFrame;
                             }
+
                         }
 
 
@@ -555,18 +424,13 @@ public class MainActivity extends AppCompatActivity {
         startCheck.setDaemon(true);
         startCheck.start();
         startCheck.join();
-        /*if (!startCheck.isAlive()){
-
-            Log.i("Start ", String.valueOf(startexecuted));}*/
         if (startexecuted) {
-            if (TVOexists){
+            if (TVOexists) {
                 activeCam = activeChan.TVO;
-            }
-            else {
-                if (TVIexists){
+            } else {
+                if (TVIexists) {
                     activeCam = activeChan.TVI;
-                }
-                else {
+                } else {
                     activeCam = activeChan.IR;
                 }
             }
@@ -574,36 +438,39 @@ public class MainActivity extends AppCompatActivity {
             WiFiThread.start();
             VideoThread.setDaemon(true);
             VideoThread.start();
+
             controlThread.start();
-            // Log.i("Check: ", String.valueOf(AXSexists));}
+
+
         }
-    }
+
+      }
 
 
     public void AXSControl() throws IOException, NoSuchAlgorithmException {
 
-        while (AXSexists) {
 
 
-            //tcpo.sendTCP(AXSSocket, po.makeMreq(2, targetspeedx, targetspeedy, targetpositivity));
-            tcpo.sendTCP(AXSSocket, po.AXSmakeMreq(AXSdata, 1.2f, xs, xy));
-            // Log.d("x, y ", String.valueOf(xs) + String.valueOf(xy));
-            final String recievedPosition = po.parseMrep(tcpo.recieveTCP(AXSSocket));
-            positionTextHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    updateCurrentPosition(recievedPosition);
-                }
-            });
+        tcpo.sendTCP(AXSSocket, po.AXSmakeMreq(AXSdata, 1.2f, xs, xy));
+
+        recievedPosition = po.parseMrep(tcpo.recieveTCP(AXSSocket));
+        /*positionTextHandler.post(new Runnable() {
+            @Override
+            public void run() {*/
+                updateCurrentPosition(recievedPosition);
+            }
+        /*});*/
+
+
+
+    public void LensControl() throws IOException {
+        switch (activeCam) {
+            case TVO:
+                tcpo.sendTCP(TVOLensSocket, po.makeTVOLensMreq(TVOLensdata, TVOZoom, TVOFocus));
+                break;
         }
     }
 
-
-
-
-
-
-        //}
 
 
 
@@ -614,36 +481,39 @@ public class MainActivity extends AppCompatActivity {
         curContext.startActivity(errorIntent);
     }
 
-    public void updateCurrentPosition (String curPos){
+    @SuppressLint("SetTextI18n")
+    public void updateCurrentPosition(String curPos) {
         String[] positions = curPos.split(";");
-        String curPosX = positions[0].substring(0, positions[0].indexOf(".")+2);
-        String curPosY =  positions[1].substring(0, positions[1].indexOf(".")+2);
-        positionText.setText("X position: " + curPosX + "\t" + "Y position: " + curPosY);
+        String curPosX = positions[0].substring(0, positions[0].indexOf(".") + 2);
+        String curPosY = positions[1].substring(0, positions[1].indexOf(".") + 2);
+        curpossum = "X position: " + curPosX + "\t" + "Y position: " + curPosY;
+        Message message = Message.obtain();
+        message.obj = curpossum;
+    positionTextHandler.sendMessage(message);
     }
 
-    public Bitmap getVideo (Socket inputSocket){
-        if (inputSocket != null){
-            //Log.i("picsock ", String.valueOf(inputSocket));
+    public Bitmap getVideo(Socket inputSocket) {
+        if (inputSocket != null) {
             byte[] pic = new byte[0];
             try {
                 pic = tcpo.recieveTCP(inputSocket);
-                //Log.i("piccy ", String.valueOf(pic));
-            } catch (IOException e) {
+                }
+                catch (IOException e) {
                 e.printStackTrace();
             }
 
             frames = BitmapFactory.decodeByteArray(pic, 0, pic.length);
 
-    }
+        }
         return frames;
-}
+    }
 
     @SuppressLint("ClickableViewAccessibility")
-    public void setFrame (Bitmap picture){
+    public void setFrame(Bitmap picture) {
 
         frameHolder.setImageBitmap(picture);
 
-        final GestureDetector gd = new GestureDetector(getApplicationContext(), new GestureDetector.SimpleOnGestureListener(){
+        final GestureDetector gd = new GestureDetector(getApplicationContext(), new GestureDetector.SimpleOnGestureListener() {
             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
             @Override
             public boolean onDoubleTap(MotionEvent e) {
@@ -652,15 +522,13 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("OnDoubleTapListener", "onDoubleTap");
 
 
-
                 return true;
             }
 
 
-
             @Override
             public boolean onDown(MotionEvent event) {
-                Log.d("TAG","onDown: ");
+                Log.d("TAG", "onDown: ");
 
                 // don't return false here or else none of the other
                 // gestures will work
@@ -685,54 +553,12 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2,
                                     float distanceX, float distanceY) {
                 Log.i("TAG", "onScroll: ");
-                //float cx = e2.getX();
-                //float cy = e2.getY();
 
-                /*comparator.set(0, bx);
-                comparator.set(1, e2.getX());
-                if (distanceX < 100 && distanceX > 10 || distanceX > -100 && distanceX < -10) {
-                    if (comparator.get(0).equals(comparator.get(1))) {
-                        xs = 0;
-                    } else {
-                        if (comparator.get(0) > comparator.get(1)) {
-
-                            xs = -1;
-                        } else {
-                            xs = 1;
-
-                        }
-                    }
-                }
-                else {
-                    xs = 0;
-                }
-                comparator.set(2, by);
-                comparator.set(3, e2.getY());
-                Log.i("DY ", String.valueOf(distanceY));
-                Log.i("DX ", String.valueOf(distanceX));
-                if (distanceY < 100 && distanceY > 10 || distanceY > -100 && distanceY < -10) {
-                    if (comparator.get(2).equals(comparator.get(3))) {
-                        xy = 0;
-                    } else {
-                        if (comparator.get(2) > comparator.get(3)) {
-                            xy = 1;
-                            //Log.i("DIS: ", String.valueOf(comparator.get(2) - comparator.get(3)));
-                        } else {
-                            xy = -1;
-                            //Log.i("DIS: ", String.valueOf(comparator.get(2) - comparator.get(3)));
-                        }
-                    }
-                }
-                else {
-                    xy = 0;
-                }*/
-
-                return true;
+                              return true;
             }
 
 
@@ -742,7 +568,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("TAG", "onFling: ");
                 return true;
             }
-
 
 
         });
@@ -756,32 +581,24 @@ public class MainActivity extends AppCompatActivity {
 
                 if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
                     Log.d("TouchTest", "Touch down");
-                    if (event.getX() < (((v.getWidth()/2) - (v.getWidth()*0.1))) || event.getX() > ((v.getWidth()/2) + (v.getWidth()*0.1))){
-                   // if (event.getX() < (findViewById(R.id.father).getWidth()/2) - (findViewById(R.id.father).getWidth()*0.1) || event.getX() > (findViewById(R.id.father).getWidth()/2) + (findViewById(R.id.father).getWidth()*0.1)){
-                        Log.i("event X: ", String.valueOf(event.getX()));
-                        Log.i("event X: ", String.valueOf(findViewById(R.id.father).getWidth()/2));
-                        if (event.getX() > (v.getWidth()/2)){
+                    if (event.getX() < (((v.getWidth() / 2) - (v.getWidth() * 0.1))) || event.getX() > ((v.getWidth() / 2) + (v.getWidth() * 0.1))) {
+
+                        if (event.getX() > (v.getWidth() / 2)) {
                             xs = 1;
-                        }
-                        else {
+                        } else {
                             xs = -1;
                         }
-                    }
-                    else {
+                    } else {
                         xs = 0;
                     }
-                    if (event.getY() < (((v.getHeight()/2) - (v.getHeight()*0.1))) || event.getY() > ((v.getHeight()/2) + (v.getHeight()*0.1))){
-                        // if (event.getX() < (findViewById(R.id.father).getWidth()/2) - (findViewById(R.id.father).getWidth()*0.1) || event.getX() > (findViewById(R.id.father).getWidth()/2) + (findViewById(R.id.father).getWidth()*0.1)){
-                        //Log.i("event X: ", String.valueOf(event.getX()));
-                        //Log.i("event X: ", String.valueOf(findViewById(R.id.father).getWidth()/2));
-                        if (event.getY() > (v.getHeight()/2)){
+                    if (event.getY() < (((v.getHeight() / 2) - (v.getHeight() * 0.1))) || event.getY() > ((v.getHeight() / 2) + (v.getHeight() * 0.1))) {
+
+                        if (event.getY() > (v.getHeight() / 2)) {
                             xy = -1;
-                        }
-                        else {
+                        } else {
                             xy = 1;
                         }
-                    }
-                    else {
+                    } else {
                         xy = 0;
                     }
 
@@ -789,13 +606,9 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("TouchTest", "Touch up");
                     xs = 0;
                     xy = 0;
-                    /*bx = event.getX();
-                    by = event.getY();*/
+
                 }
 
-
-
-               // Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
                 return gd.onTouchEvent(event);
 
             }
@@ -806,35 +619,135 @@ public class MainActivity extends AppCompatActivity {
         frameHolder.setOnTouchListener(touchListener);
     }
 
-    public void openIRCover (View view){
 
-        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_OPEN);
+    View.OnTouchListener ZoomInTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            // pass the events to the gesture detector
+            // a return value of true means the detector is handling it
+            // a return value of false means the detector didn't
+            // recognize the event
 
-    }
-
-    public void closeIRCover (View view){
-
-        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
-
-    }
-
-
-    public void TVOZoomIn (View view){
+            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                Log.d("TouchTest", "Touch down");
+                TVOZoom = 1;
+            } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                Log.d("TouchTest", "Touch up");
+                TVOZoom = 0;
+            }
 
 
-    }
+            // Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
+            return onTouchEvent(event);
 
-    public void TVOZoomOut (View view) {
+        }
+    };
 
-    }
+        View.OnTouchListener ZoomOutTouchListener = new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // pass the events to the gesture detector
+                // a return value of true means the detector is handling it
+                // a return value of false means the detector didn't
+                // recognize the event
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
-        WiFiThread.interrupt();
-        VideoThread.interrupt();
-    }
+                if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                    Log.d("TouchTest", "Touch down");
+                    TVOZoom = -1;
+                } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                    Log.d("TouchTest", "Touch up");
+                    TVOZoom = 0;
+                }
 
+
+                // Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
+                return onTouchEvent(event);
+
+            }
+
+
+        };
+
+
+    View.OnTouchListener FocusInTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            // pass the events to the gesture detector
+            // a return value of true means the detector is handling it
+            // a return value of false means the detector didn't
+            // recognize the event
+
+            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                Log.d("TouchTest", "Touch down");
+                TVOFocus = 1;
+            } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                Log.d("TouchTest", "Touch up");
+                TVOFocus = 0;
+            }
+
+
+            // Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
+            return onTouchEvent(event);
+
+        }
+    };
+
+    View.OnTouchListener FocusOutTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            // pass the events to the gesture detector
+            // a return value of true means the detector is handling it
+            // a return value of false means the detector didn't
+            // recognize the event
+
+            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                Log.d("TouchTest", "Touch down");
+                TVOFocus = -1;
+            } else if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                Log.d("TouchTest", "Touch up");
+                TVOFocus = 0;
+            }
+
+
+            // Log.i("touch", String.valueOf(gd.onTouchEvent(event)));
+            return onTouchEvent(event);
+
+        }
+
+
+    };
+
+
+
+
+        public void openIRCover(View view) {
+
+            new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_OPEN);
+
+        }
+
+        public void closeIRCover(View view) {
+
+            new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
+
+        }
+
+
+
+
+
+        @Override
+        protected void onDestroy() {
+            super.onDestroy();
+            new IRCoverAsyncTask(IROMUSocket, IROMUdata).execute(Aef.MREQ.Lid.LID_CLOSE);
+            WiFiThread.interrupt();
+            VideoThread.interrupt();
+            controlThread.interrupt();
+        }
+
+void interStater (){
+            startCheck.interrupt();
+}
 
 }
+
